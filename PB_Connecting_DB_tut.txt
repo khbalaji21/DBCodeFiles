@@ -1,0 +1,127 @@
+PowerBuilder  This statement causes dw_emp1 to retrieve rows from the database.
+
+dw_emp1.Retrieve()
+
+This example illustrates how to set up a connection and then retrieve rows in the DataWindow control. A typical scenario is to establish the connection in the application's Open event and to retrieve rows in the Open event for the window that contains the DataWindow control.
+The following is a script for the application open event. SQLCA is the default transaction object. The ProfileString function is getting information about the database connection from an initialization file:
+
+// Set up Transaction object from the INI file
+
+SQLCA.DBMS = ProfileString("myapp.ini", &
+
+        "Database", "DBMS", " ")
+
+SQLCA.DbParm = ProfileString("myapp.ini", &
+
+        "Database", "DbParm", " ")
+
+// Connect to database
+
+CONNECT USING SQLCA;
+
+// Test whether the connect succeeded
+
+IF SQLCA.SQLCode <> 0 THEN
+
+        MessageBox("Connect Failed", &
+
+            "Cannot connect to database." &
+
+            + SQLCA.SQLErrText)
+
+        RETURN
+
+END IF
+
+Open(w_main)
+
+To continue the example, the open event for w_main sets the transaction object for the DataWindow control dw_main to SQLCA and retrieves rows from the database. If no rows were retrieved or if there is an error (that is, the return value is negative), the script displays a message to the user:
+
+long ll_rows
+
+dw_main.SetTransObject(SQLCA)
+
+ll_rows = dw_main.Retrieve()
+
+IF ll_rows < 1 THEN MessageBox( &
+
+        "Database Error", &
+
+        "No rows retrieved.")
+
+This example illustrates the use of retrieval arguments. Assume :Salary and :Region are declared as arguments in the DataWindow painter and dw_emp has this SQL SELECT statement:
+
+SELECT Name, emp.sal, sales.rgn From Employee, Sales
+
+        WHERE emp.sal > :Salary and sales.rgn = :Region
+
+Then this statement causes dw_emp1 to retrieve employees from the database who have a salary greater than $50,000 and are in the northwest region:
+
+dw_1.Retrieve(50000, "NW")
+
+This example also illustrates retrieval arguments. Assume dw_EmpHist contains this SQL SELECT statement and emps is defined as a number array:
+
+SELECT EmpNbr, Sal, Rgn From Employee
+
+        WHERE EmpNbr IN (:emps)
+
+These statements cause dw_EmpHist to retrieve Employees from the database whose employee numbers are values in the array emps:
+
+Double emps[3]
+
+emps[1] = 100
+
+emps[2] = 200
+
+emps[3] = 300
+
+dw_EmpHist.Retrieve(emps)
+
+The following example illustrates how to use Retrieve twice to get data meeting different criteria. Assume the SELECT statement for the DataWindow object requires one argument, the department number. Then these statements retrieve all rows in the database in which department number is 100 or 200.
+The script for the RetrieveStart event in the DataWindow control sets the return code to 2 so the rows and buffers of the DataWindow control will not be cleared before each retrieval:
+
+RETURN 2
+
+The script for the Clicked event for a Retrieve CommandButton retrieves the data with two function calls. The Reset method clears any previously retrieved rows, normally done by Retrieve. Here, Retrieve is prevented from doing it by the return code in the RetrieveStart event:
+
+dw_1.Reset( )
+
+dw_1.Retrieve(100)
+
+dw_1.Retrieve(200)
+
+Web DataWindow server component  This example expects three page parameters whose values will be used for retrieval arguments: empid_param, empname_param, and rptdate_param. To make these page parameters available each time the page is reloaded, you must also call SetSelfLink to recreate the page parameters each time. The PowerDynamo server-side script calls RetrieveEx for the server component called dwComponent and gets information about the database error if RetrieveEx fails:
+
+string selflinkargs = 
+
+        "empid_param='\"" +
+
+            document.value.empid_param + "\"'" + 
+
+        "|empname_param='\"" + 
+
+            document.value.empname_param + "\"'" + 
+
+        "|rptdate_param='\"" + 
+
+            document.value.rptdate_param + "\"'";
+
+dwComponent.SetSelfLink(document.name, selflinkargs);
+
+string args = document.value.empid_param + "\n" + empname_param + "\n" + rptdate_param;
+
+retVal = dwComponent.RetrieveEx( args );
+
+if (retVal < 0) {
+
+        document.Write("Retrieval error: " 
+
+            + dwComponent.GetLastError( ) 
+
+            + "<BR>"
+
+            + dwComponent.GetLastErrorString( )
+
+            + "<BR>");
+
+}

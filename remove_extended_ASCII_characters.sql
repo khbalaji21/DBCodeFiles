@@ -2,7 +2,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 SET ANSI_NULLS ON
 GO
-use  cris_database
+use  <database_name>
 go
 --Query to remove Extended Character from Consumer Details to avoid any issue in Checks processing
 Declare @case_num       	int
